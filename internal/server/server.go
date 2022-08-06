@@ -116,7 +116,8 @@ func (s *Server) handleClaim() http.HandlerFunc {
 			"txHash":  txHash,
 			"address": address,
 		}).Info("Funded directly successfully")
-		fmt.Fprintf(w, "Txhash: %s", txHash)
+		w.Header().Set("Content-Type", "application.json")
+		fmt.Fprintf(w, "{\"tx_hash\": \"%s\"}", txHash)
 	}
 }
 
