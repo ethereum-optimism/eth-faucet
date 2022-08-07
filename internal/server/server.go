@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -90,15 +89,12 @@ func (s *Server) handleClaim() http.HandlerFunc {
 			return
 		}
 
-		dec := json.NewDecoder(io.LimitReader(r.Body, 1024))
-		defer r.Body.Close()
-		var claimReq ClaimRequest
-		if err := dec.Decode(&claimReq); err != nil {
-			http.Error(w, "failed to read request body", 400)
+		address, err := readAddress(r)
+		if err != nil {
+			http.Error(w, "invalid address", http.StatusBadRequest)
 			return
 		}
 
-		address := claimReq.Address
 		// Try to lock mutex if the work queue is empty
 		if len(s.queue) != 0 || !s.mutex.TryLock() {
 			select {

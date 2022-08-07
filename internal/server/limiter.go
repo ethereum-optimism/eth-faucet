@@ -11,8 +11,6 @@ import (
 	"github.com/jellydator/ttlcache/v2"
 	log "github.com/sirupsen/logrus"
 	"github.com/urfave/negroni"
-
-	"github.com/chainflag/eth-faucet/internal/chain"
 )
 
 type Limiter struct {
@@ -33,11 +31,12 @@ func NewLimiter(proxyCount int, ttl time.Duration) *Limiter {
 }
 
 func (l *Limiter) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	address := r.PostFormValue(AddressKey)
-	if !chain.IsValidAddress(address, true) {
+	address, err := readAddress(r)
+	if err != nil {
 		http.Error(w, "invalid address", http.StatusBadRequest)
 		return
 	}
+
 	if l.ttl <= 0 {
 		next.ServeHTTP(w, r)
 		return
