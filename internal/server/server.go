@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"time"
@@ -23,6 +24,10 @@ type Server struct {
 	mutex trylock.Mutex
 	cfg   *Config
 	queue chan string
+}
+
+type ClaimRequest struct {
+	Address string `json:"address"`
 }
 
 func NewServer(builder chain.TxBuilder, cfg *Config) *Server {
@@ -85,7 +90,15 @@ func (s *Server) handleClaim() http.HandlerFunc {
 			return
 		}
 
-		address := r.PostFormValue(AddressKey)
+		dec := json.NewDecoder(io.LimitReader(r.Body, 1024))
+		defer r.Body.Close()
+		var claimReq ClaimRequest
+		if err := dec.Decode(&claimReq); err != nil {
+			http.Error(w, "failed to read request body", 400)
+			return
+		}
+
+		address := claimReq.Address
 		// Try to lock mutex if the work queue is empty
 		if len(s.queue) != 0 || !s.mutex.TryLock() {
 			select {
