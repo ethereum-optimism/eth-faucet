@@ -33,15 +33,15 @@
       return;
     }
 
-    let formData = new FormData();
-    formData.append('address', address);
     const res = await fetch('/api/claim', {
       method: 'POST',
-      body: formData,
+      body: JSON.stringify({
+        address,
+      }),
     });
-    let message = await res.text();
+    let data = await res.json();
     let type = res.ok ? 'is-success' : 'is-warning';
-    toast({ message, type });
+    toast({ message: `ETH dispensed in ${data.tx_hash}`, type });
   }
 
   function capitalize(str) {
